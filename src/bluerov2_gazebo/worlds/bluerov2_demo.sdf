@@ -1,0 +1,977 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  BlueROV2 200 m Deep-Water Underwater World
+  - Water surface remains at z = 0 for reference.
+  - Vehicle operating depth is around z = -200 m.
+  - Seafloor is around z = -220 m, giving clearance below the ROV.
+  - Lighting, fog, and current assumptions are tuned for deep work, not shallow water.
+  - Gravity is kept at 0 for stability because the current simplified collision volume is not buoyancy-balanced.
+-->
+<sdf version="1.9">
+  <world name="underwater_world">
+
+    <!-- ==================== GUI PLUGINS ==================== -->
+    <gui fullscreen="0">
+      <plugin filename="MinimalScene" name="3D View">
+        <gz-gui>
+          <title>3D View</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="state" type="string">docked</property>
+        </gz-gui>
+        <engine>ogre</engine>
+        <scene>scene</scene>
+        <ambient_light>0.28 0.38 0.42</ambient_light>
+        <background_color>0.035 0.090 0.115</background_color>
+        <!-- Startup camera looks directly at the 200 m worksite so the GUI never opens on a flat fog/background view. -->
+        <camera_pose>-24 -18 -178 0 0.63 0.64</camera_pose>
+        <camera_clip>
+          <near>0.05</near>
+          <far>1000</far>
+        </camera_clip>
+      </plugin>
+      <plugin filename="WorldControl" name="World control">
+        <gz-gui>
+          <title>World control</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="height" type="double">72</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="left" target="left"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <play_pause>true</play_pause>
+        <step>true</step>
+        <start_paused>false</start_paused>
+        <use_event>true</use_event>
+      </plugin>
+      <plugin filename="GzSceneManager" name="Scene Manager">
+        <gz-gui>
+          <property key="resizable" type="bool">false</property>
+          <property key="width" type="double">5</property>
+          <property key="height" type="double">5</property>
+          <property key="state" type="string">floating</property>
+          <property key="showTitleBar" type="bool">false</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="WorldStats" name="World stats">
+        <gz-gui>
+          <title>World stats</title>
+          <property key="showTitleBar" type="bool">false</property>
+          <property key="resizable" type="bool">false</property>
+          <property key="height" type="double">110</property>
+          <property key="width" type="double">290</property>
+          <property key="z" type="double">1</property>
+          <property key="state" type="string">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right"/>
+            <line own="bottom" target="bottom"/>
+          </anchors>
+        </gz-gui>
+        <sim_time>true</sim_time>
+        <real_time>true</real_time>
+        <real_time_factor>true</real_time_factor>
+        <iterations>true</iterations>
+      </plugin>
+      <plugin filename="EntityTree" name="Entity tree">
+        <gz-gui>
+          <property key="state" type="string">docked</property>
+        </gz-gui>
+      </plugin>
+      <plugin filename="ComponentInspector" name="Component inspector">
+        <gz-gui>
+          <property key="state" type="string">docked_collapsed</property>
+        </gz-gui>
+      </plugin>
+    </gui>
+
+    <!-- ==================== PHYSICS ==================== -->
+    <!-- Gravity=0: underwater neutral buoyancy -->
+    <gravity>0 0 0</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.01</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- ==================== SYSTEM PLUGINS ==================== -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <!-- Buoyancy: seawater density 1025 kg/m^3, more realistic than freshwater density. -->
+    <plugin filename="gz-sim-buoyancy-system" name="gz::sim::systems::Buoyancy">
+      <uniform_fluid_density>1025</uniform_fluid_density>
+    </plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <!-- ==================== SCENE: LOW LIGHT AND SHORT-RANGE FOG FOR 200 m DEEP WATER ==================== -->
+    <scene>
+      <ambient>0.28 0.38 0.42 1.0</ambient>
+      <background>0.035 0.090 0.115 1.0</background>
+      <fog>
+        <color>0.035 0.085 0.105 1.0</color>
+        <type>linear</type>
+        <start>90</start>
+        <end>340</end>
+        <density>0.0015</density>
+      </fog>
+    </scene>
+
+    <!-- ==================== LIGHTING ==================== -->
+    <!-- Remaining sunlight at 200 m is very weak; keep a small contribution so the scene is not fully black. -->
+    <light type="directional" name="sun_caustics">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.36 0.48 0.55 1</diffuse>
+      <specular>0.05 0.06 0.07 1</specular>
+      <attenuation>
+        <range>600</range>
+        <constant>1.0</constant>
+        <linear>0.018</linear>
+        <quadratic>0.0012</quadratic>
+      </attenuation>
+      <direction>-0.18 0.05 -0.98</direction>
+    </light>
+
+    <light type="directional" name="sun_fill">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 20 0 0 0</pose>
+      <diffuse>0.26 0.38 0.45 1</diffuse>
+      <specular>0.035 0.045 0.055 1</specular>
+      <attenuation>
+        <range>500</range>
+        <constant>1.0</constant>
+        <linear>0.020</linear>
+        <quadratic>0.0015</quadratic>
+      </attenuation>
+      <direction>0.12 -0.06 -0.99</direction>
+    </light>
+
+    <!-- Very weak fill lights around the worksite help simulation visibility. -->
+    <light type="point" name="deep_fill_1">
+      <pose>-10 8 -196 0 0 0</pose>
+      <diffuse>0.75 0.92 1.00 1</diffuse>
+      <specular>0.08 0.10 0.12 1</specular>
+      <attenuation>
+        <range>130</range>
+        <constant>0.45</constant>
+        <linear>0.025</linear>
+        <quadratic>0.0008</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <light type="point" name="deep_fill_2">
+      <pose>16 -10 -202 0 0 0</pose>
+      <diffuse>0.68 0.86 1.00 1</diffuse>
+      <specular>0.07 0.09 0.11 1</specular>
+      <attenuation>
+        <range>130</range>
+        <constant>0.48</constant>
+        <linear>0.025</linear>
+        <quadratic>0.0008</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <light type="point" name="mid_fill">
+      <pose>2 3 -198 0 0 0</pose>
+      <diffuse>0.90 1.00 1.00 1</diffuse>
+      <specular>0.10 0.11 0.12 1</specular>
+      <attenuation>
+        <range>110</range>
+        <constant>0.42</constant>
+        <linear>0.030</linear>
+        <quadratic>0.0010</quadratic>
+      </attenuation>
+      <cast_shadows>false</cast_shadows>
+    </light>
+
+    <!-- Worksite marker prevents the GUI from opening on an empty-looking view. -->
+    <model name="worksite_visual_reference">
+      <static>true</static>
+      <pose>0 0 -200 0 0 0</pose>
+      <link name="link">
+        <visual name="center_beacon">
+          <geometry><sphere><radius>0.65</radius></sphere></geometry>
+          <material>
+            <ambient>1.00 0.88 0.15 1</ambient>
+            <diffuse>1.00 0.88 0.15 1</diffuse>
+            <emissive>0.80 0.55 0.06 1</emissive>
+          </material>
+        </visual>
+        <visual name="x_axis_red">
+          <pose>2.5 0 0 0 1.5707963268 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>5.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.95 0.08 0.05 1</ambient>
+            <diffuse>1.00 0.12 0.08 1</diffuse>
+            <emissive>0.40 0.02 0.01 1</emissive>
+          </material>
+        </visual>
+        <visual name="y_axis_green">
+          <pose>0 2.5 0 1.5707963268 0 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>5.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.08 0.75 0.16 1</ambient>
+            <diffuse>0.10 0.95 0.20 1</diffuse>
+            <emissive>0.02 0.35 0.04 1</emissive>
+          </material>
+        </visual>
+        <visual name="z_axis_blue">
+          <pose>0 0 2.5 0 0 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>5.0</length></cylinder></geometry>
+          <material>
+            <ambient>0.08 0.30 0.95 1</ambient>
+            <diffuse>0.10 0.38 1.00 1</diffuse>
+            <emissive>0.02 0.10 0.45 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Marker near the default Gazebo camera so the GUI always has a visible object. -->
+    <model name="surface_camera_reference">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="surface_billboard">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.35 9.0 7.0</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>1.00 0.22 0.05 1</ambient>
+            <diffuse>1.00 0.26 0.08 1</diffuse>
+            <emissive>0.55 0.10 0.02 1</emissive>
+          </material>
+        </visual>
+        <visual name="surface_crossbar">
+          <pose>0 0 -1.6 1.5707963268 0 0</pose>
+          <geometry>
+            <cylinder>
+              <radius>0.10</radius>
+              <length>12.0</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>1.00 0.90 0.10 1</ambient>
+            <diffuse>1.00 0.90 0.10 1</diffuse>
+            <emissive>0.50 0.35 0.02 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Direction column from the surface reference down to the 200 m worksite. -->
+    <model name="descent_reference_column">
+      <static>true</static>
+      <pose>0 0 -100 0 0 0</pose>
+      <link name="link">
+        <visual name="descent_column">
+          <geometry>
+            <cylinder>
+              <radius>0.18</radius>
+              <length>200.0</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <ambient>0.05 0.85 1.00 1</ambient>
+            <diffuse>0.08 0.90 1.00 1</diffuse>
+            <emissive>0.02 0.38 0.50 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== WATER SURFACE REFERENCE AT z=0, FAR ABOVE THE ROV ==================== -->
+    <model name="water_surface">
+      <static>true</static>
+      <pose>0 0 35 0 0 0</pose>
+      <link name="link">
+        <!-- Main semi-transparent water surface layer. -->
+        <visual name="water_main">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.015 0.035 0.055 0.08</ambient>
+            <diffuse>0.020 0.055 0.080 0.08</diffuse>
+            <specular>0.080 0.120 0.160 0.06</specular>
+            <emissive>0.02 0.03 0.05 0.0</emissive>
+          </material>
+          <transparency>0.92</transparency>
+        </visual>
+        <!-- Subtle offset wave layer. -->
+        <visual name="wave_layer_1">
+          <pose>0 0 -0.05 0.015 0 0</pose>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.015 0.035 0.055 0.08</ambient>
+            <diffuse>0.020 0.055 0.080 0.08</diffuse>
+            <specular>0.080 0.120 0.160 0.06</specular>
+          </material>
+          <transparency>0.92</transparency>
+        </visual>
+        <visual name="wave_layer_2">
+          <pose>0 0 -0.10 -0.01 0.015 0</pose>
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.015 0.035 0.055 0.08</ambient>
+            <diffuse>0.020 0.055 0.080 0.08</diffuse>
+            <specular>0.080 0.120 0.160 0.06</specular>
+          </material>
+          <transparency>0.92</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== DEEP SEAFLOOR AROUND 220 m, 500x500 m ==================== -->
+    <model name="seafloor">
+      <static>true</static>
+      <link name="link">
+        <pose>0 0 -220 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>500 500</size>
+            </plane>
+          </geometry>
+          <material>
+            <!-- Seafloor sand/mud color. -->
+            <ambient>0.22 0.19 0.13 1</ambient>
+            <diffuse>0.35 0.28 0.18 1</diffuse>
+            <specular>0.03 0.03 0.02 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== SONAR NAVIGATION CORRIDOR ==================== -->
+    <model name="navigation_lane">
+      <static>true</static>
+      <link name="link">
+        <pose>0 0 -219.92 0 0 0</pose>
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>90 12 0.16</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>90 12 0.16</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.12 0.30 0.34 1</ambient>
+            <diffuse>0.18 0.42 0.48 1</diffuse>
+            <specular>0.05 0.08 0.08 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="guide_wall_port">
+      <static>true</static>
+      <pose>0 6.5 -208 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>90 0.35 24</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>90 0.35 24</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.16 0.24 0.28 0.40</ambient>
+            <diffuse>0.20 0.34 0.38 0.40</diffuse>
+            <specular>0.05 0.08 0.08 0.20</specular>
+          </material>
+          <transparency>0.55</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <model name="guide_wall_starboard">
+      <static>true</static>
+      <pose>0 -6.5 -208 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>90 0.35 24</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>90 0.35 24</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.16 0.24 0.28 0.40</ambient>
+            <diffuse>0.20 0.34 0.38 0.40</diffuse>
+            <specular>0.05 0.08 0.08 0.20</specular>
+          </material>
+          <transparency>0.55</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <model name="navigation_gate_entry">
+      <static>true</static>
+      <pose>-18 0 -198 0 0 0</pose>
+      <link name="link">
+        <collision name="left_post">
+          <pose>0 3.5 -10 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>20</length></cylinder></geometry>
+        </collision>
+        <collision name="right_post">
+          <pose>0 -3.5 -10 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>20</length></cylinder></geometry>
+        </collision>
+        <collision name="top_beam">
+          <pose>0 0 -1 0 1.5707963268 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>7.4</length></cylinder></geometry>
+        </collision>
+        <visual name="left_post_visual">
+          <pose>0 3.5 -10 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>20</length></cylinder></geometry>
+          <material><ambient>0.78 0.56 0.12 1</ambient><diffuse>0.95 0.68 0.16 1</diffuse></material>
+        </visual>
+        <visual name="right_post_visual">
+          <pose>0 -3.5 -10 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>20</length></cylinder></geometry>
+          <material><ambient>0.78 0.56 0.12 1</ambient><diffuse>0.95 0.68 0.16 1</diffuse></material>
+        </visual>
+        <visual name="top_beam_visual">
+          <pose>0 0 -1 0 1.5707963268 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>7.4</length></cylinder></geometry>
+          <material><ambient>0.78 0.56 0.12 1</ambient><diffuse>0.95 0.68 0.16 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="navigation_gate_exit">
+      <static>true</static>
+      <pose>24 0 -199 0 0 0</pose>
+      <link name="link">
+        <collision name="left_post">
+          <pose>0 3.5 -9 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>18</length></cylinder></geometry>
+        </collision>
+        <collision name="right_post">
+          <pose>0 -3.5 -9 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>18</length></cylinder></geometry>
+        </collision>
+        <collision name="top_beam">
+          <pose>0 0 -1 0 1.5707963268 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>7.4</length></cylinder></geometry>
+        </collision>
+        <visual name="left_post_visual">
+          <pose>0 3.5 -9 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>18</length></cylinder></geometry>
+          <material><ambient>0.15 0.62 0.80 1</ambient><diffuse>0.20 0.78 0.95 1</diffuse></material>
+        </visual>
+        <visual name="right_post_visual">
+          <pose>0 -3.5 -9 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>18</length></cylinder></geometry>
+          <material><ambient>0.15 0.62 0.80 1</ambient><diffuse>0.20 0.78 0.95 1</diffuse></material>
+        </visual>
+        <visual name="top_beam_visual">
+          <pose>0 0 -1 0 1.5707963268 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>7.4</length></cylinder></geometry>
+          <material><ambient>0.15 0.62 0.80 1</ambient><diffuse>0.20 0.78 0.95 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== UNDERWATER STRUCTURES, CORAL, AND ROCKS ==================== -->
+
+    <!-- Large central rock cluster. -->
+    <model name="rock_cluster_center">
+      <static>true</static>
+      <pose>0 0 -218 0 0 0</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>4 3 5</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>4 3 5</size></box></geometry>
+          <material><ambient>0.25 0.22 0.18 1</ambient><diffuse>0.38 0.32 0.24 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_center_2">
+      <static>true</static>
+      <pose>2 1.5 -217 0.1 -0.05 0.3</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>2 2.5 4</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>2 2.5 4</size></box></geometry>
+          <material><ambient>0.28 0.24 0.19 1</ambient><diffuse>0.40 0.34 0.26 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Eastern coral ridge. -->
+    <model name="coral_reef_east_1">
+      <static>true</static>
+      <pose>15 5 -218 0 0 0.5</pose>
+      <link name="link">
+        <collision name="c1"><geometry><cylinder><radius>1.5</radius><length>5</length></cylinder></geometry></collision>
+        <visual name="v1">
+          <geometry><cylinder><radius>1.5</radius><length>5</length></cylinder></geometry>
+          <material>
+            <ambient>0.55 0.25 0.12 1</ambient>
+            <diffuse>0.72 0.35 0.18 1</diffuse>
+            <specular>0.05 0.03 0.02 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="coral_reef_east_2">
+      <static>true</static>
+      <pose>17 8 -217 0.1 0 1.2</pose>
+      <link name="link">
+        <collision name="c1"><geometry><cylinder><radius>0.8</radius><length>7</length></cylinder></geometry></collision>
+        <visual name="v1">
+          <geometry><cylinder><radius>0.8</radius><length>7</length></cylinder></geometry>
+          <material>
+            <ambient>0.20 0.45 0.55 1</ambient>
+            <diffuse>0.28 0.60 0.72 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="coral_reef_east_3">
+      <static>true</static>
+      <pose>13 10 -219 -0.05 0.1 0.8</pose>
+      <link name="link">
+        <collision name="c1"><geometry><cylinder><radius>2</radius><length>3</length></cylinder></geometry></collision>
+        <visual name="v1">
+          <geometry><cylinder><radius>2</radius><length>3</length></cylinder></geometry>
+          <material>
+            <ambient>0.45 0.15 0.35 1</ambient>
+            <diffuse>0.60 0.22 0.48 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Western rock cluster. -->
+    <model name="rock_west_1">
+      <static>true</static>
+      <pose>-18 -6 -217 0 0 0.2</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>6 4 6</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>6 4 6</size></box></geometry>
+          <material><ambient>0.20 0.18 0.15 1</ambient><diffuse>0.32 0.28 0.22 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="rock_west_2">
+      <static>true</static>
+      <pose>-22 -2 -218.5 0.05 -0.1 0</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>3 5 3</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>3 5 3</size></box></geometry>
+          <material><ambient>0.22 0.19 0.16 1</ambient><diffuse>0.34 0.29 0.23 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Northern underwater tunnel. -->
+    <model name="underwater_arch_north">
+      <static>true</static>
+      <pose>-5 20 -210 0 0 0.4</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>8 2 4</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>8 2 4</size></box></geometry>
+          <material><ambient>0.18 0.16 0.14 1</ambient><diffuse>0.30 0.26 0.20 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Pipeline / artificial infrastructure for robot inspection tests. -->
+    <model name="pipeline_1">
+      <static>true</static>
+      <pose>8 -12 -205 0 1.5708 0</pose>
+      <link name="link">
+        <collision name="c1"><geometry><cylinder><radius>0.3</radius><length>20</length></cylinder></geometry></collision>
+        <visual name="v1">
+          <geometry><cylinder><radius>0.3</radius><length>20</length></cylinder></geometry>
+          <material>
+            <ambient>0.40 0.38 0.35 1</ambient>
+            <diffuse>0.55 0.52 0.48 1</diffuse>
+            <specular>0.20 0.20 0.18 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="pipeline_2">
+      <static>true</static>
+      <pose>-10 8 -208 0 1.5708 1.0</pose>
+      <link name="link">
+        <collision name="c1"><geometry><cylinder><radius>0.3</radius><length>15</length></cylinder></geometry></collision>
+        <visual name="v1">
+          <geometry><cylinder><radius>0.3</radius><length>15</length></cylinder></geometry>
+          <material>
+            <ambient>0.40 0.38 0.35 1</ambient>
+            <diffuse>0.55 0.52 0.48 1</diffuse>
+            <specular>0.20 0.20 0.18 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Inspection panel target. -->
+    <model name="inspection_panel_1">
+      <static>true</static>
+      <pose>6 0 -200 0 1.5708 0</pose>
+      <link name="link">
+        <collision name="c1"><geometry><box><size>1 0.1 0.8</size></box></geometry></collision>
+        <visual name="v1">
+          <geometry><box><size>1 0.1 0.8</size></box></geometry>
+          <material>
+            <ambient>0.80 0.82 0.85 1</ambient>
+            <diffuse>0.88 0.90 0.92 1</diffuse>
+            <specular>0.50 0.50 0.50 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ==================== FISH: Gazebo-native trajectory followers ==================== -->
+    <!-- Each fish has its own small patrol path so motion is visible without a ROS-side pose consumer. -->
+
+    <model name="fish_0">
+      <static>false</static>
+      <pose>5 3 -195 0 0 0</pose>
+      <link name="body">
+        <inertial><mass>0.2</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.12</radius></sphere></geometry>
+          <material>
+            <ambient>0.90 0.55 0.10 1</ambient>
+            <diffuse>1.00 0.65 0.15 1</diffuse>
+            <specular>0.30 0.20 0.05 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.14 0 0 0 0 0</pose>
+          <geometry><box><size>0.08 0.06 0.10</size></box></geometry>
+          <material>
+            <ambient>0.85 0.45 0.08 1</ambient>
+            <diffuse>0.95 0.55 0.12 1</diffuse>
+          </material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.2</force>
+        <torque>1.0</torque>
+        <waypoints>
+          <waypoint>2.5 1.0</waypoint>
+          <waypoint>7.5 2.5</waypoint>
+          <waypoint>6.5 6.0</waypoint>
+          <waypoint>2.5 4.5</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_1">
+      <static>false</static>
+      <pose>-4 6 -197 0 0 1.2</pose>
+      <link name="body">
+        <inertial><mass>0.2</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.10</radius></sphere></geometry>
+          <material>
+            <ambient>0.10 0.55 0.90 1</ambient>
+            <diffuse>0.15 0.65 1.00 1</diffuse>
+            <specular>0.10 0.25 0.40 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.12 0 0 0 0 0</pose>
+          <geometry><box><size>0.07 0.05 0.08</size></box></geometry>
+          <material><ambient>0.08 0.45 0.75 1</ambient><diffuse>0.12 0.55 0.88 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>0.9</force>
+        <torque>0.9</torque>
+        <waypoints>
+          <waypoint>-7.0 3.5</waypoint>
+          <waypoint>-2.0 6.0</waypoint>
+          <waypoint>-6.0 9.0</waypoint>
+          <waypoint>-1.5 3.0</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_2">
+      <static>false</static>
+      <pose>3 -5 -198 0 0 2.5</pose>
+      <link name="body">
+        <inertial><mass>0.3</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.15</radius></sphere></geometry>
+          <material>
+            <ambient>0.20 0.75 0.35 1</ambient>
+            <diffuse>0.28 0.90 0.45 1</diffuse>
+            <specular>0.08 0.30 0.15 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.17 0 0 0 0 0</pose>
+          <geometry><box><size>0.10 0.07 0.12</size></box></geometry>
+          <material><ambient>0.15 0.60 0.28 1</ambient><diffuse>0.22 0.75 0.38 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.1</force>
+        <torque>1.0</torque>
+        <waypoints>
+          <waypoint>1.0 -7.5</waypoint>
+          <waypoint>6.5 -6.0</waypoint>
+          <waypoint>7.0 -2.5</waypoint>
+          <waypoint>2.0 -2.0</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_3">
+      <static>false</static>
+      <pose>-8 -3 -196 0 0 0.8</pose>
+      <link name="body">
+        <inertial><mass>0.15</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.09</radius></sphere></geometry>
+          <material>
+            <ambient>0.85 0.20 0.20 1</ambient>
+            <diffuse>1.00 0.28 0.28 1</diffuse>
+            <specular>0.35 0.08 0.08 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.11 0 0 0 0 0</pose>
+          <geometry><box><size>0.06 0.04 0.07</size></box></geometry>
+          <material><ambient>0.70 0.15 0.15 1</ambient><diffuse>0.88 0.22 0.22 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>0.8</force>
+        <torque>0.8</torque>
+        <waypoints>
+          <waypoint>-11.0 -6.0</waypoint>
+          <waypoint>-5.0 -5.0</waypoint>
+          <waypoint>-4.5 -1.0</waypoint>
+          <waypoint>-10.5 0.0</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_4">
+      <static>false</static>
+      <pose>7 -8 -202 0 0 3.5</pose>
+      <link name="body">
+        <inertial><mass>0.5</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.18</radius></sphere></geometry>
+          <material>
+            <ambient>0.70 0.65 0.15 1</ambient>
+            <diffuse>0.88 0.80 0.20 1</diffuse>
+            <specular>0.30 0.28 0.05 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.20 0 0 0 0 0</pose>
+          <geometry><box><size>0.12 0.08 0.14</size></box></geometry>
+          <material><ambient>0.58 0.52 0.12 1</ambient><diffuse>0.72 0.66 0.16 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.5</force>
+        <torque>1.2</torque>
+        <waypoints>
+          <waypoint>4.5 -10.5</waypoint>
+          <waypoint>11.0 -10.0</waypoint>
+          <waypoint>10.5 -5.0</waypoint>
+          <waypoint>5.0 -5.5</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_5">
+      <static>false</static>
+      <pose>-6 12 -200 0 0 4.2</pose>
+      <link name="body">
+        <inertial><mass>0.2</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.11</radius></sphere></geometry>
+          <material>
+            <ambient>0.80 0.35 0.70 1</ambient>
+            <diffuse>0.95 0.45 0.85 1</diffuse>
+            <specular>0.25 0.10 0.22 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.13 0 0 0 0 0</pose>
+          <geometry><box><size>0.07 0.05 0.09</size></box></geometry>
+          <material><ambient>0.65 0.28 0.58 1</ambient><diffuse>0.80 0.38 0.72 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.0</force>
+        <torque>0.9</torque>
+        <waypoints>
+          <waypoint>-9.0 9.0</waypoint>
+          <waypoint>-3.0 10.5</waypoint>
+          <waypoint>-2.5 14.0</waypoint>
+          <waypoint>-8.5 14.5</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_6">
+      <static>false</static>
+      <pose>12 5 -204 0 0 1.8</pose>
+      <link name="body">
+        <inertial><mass>0.8</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.22</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.50 0.68 1</ambient>
+            <diffuse>0.20 0.65 0.85 1</diffuse>
+            <specular>0.06 0.22 0.30 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.25 0 0 0 0 0</pose>
+          <geometry><box><size>0.14 0.10 0.17</size></box></geometry>
+          <material><ambient>0.12 0.40 0.55 1</ambient><diffuse>0.16 0.52 0.70 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.8</force>
+        <torque>1.3</torque>
+        <waypoints>
+          <waypoint>9.0 2.0</waypoint>
+          <waypoint>15.5 2.5</waypoint>
+          <waypoint>16.0 8.0</waypoint>
+          <waypoint>10.0 8.5</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <model name="fish_7">
+      <static>false</static>
+      <pose>-10 -10 -199 0 0 5.0</pose>
+      <link name="body">
+        <inertial><mass>0.25</mass></inertial>
+        <visual name="fish_body">
+          <geometry><sphere><radius>0.13</radius></sphere></geometry>
+          <material>
+            <ambient>0.92 0.68 0.28 1</ambient>
+            <diffuse>1.00 0.80 0.35 1</diffuse>
+            <specular>0.35 0.26 0.10 1</specular>
+          </material>
+        </visual>
+        <visual name="fish_tail">
+          <pose>-0.15 0 0 0 0 0</pose>
+          <geometry><box><size>0.08 0.06 0.10</size></box></geometry>
+          <material><ambient>0.78 0.55 0.22 1</ambient><diffuse>0.90 0.66 0.28 1</diffuse></material>
+        </visual>
+      </link>
+      <plugin filename="gz-sim-trajectory-follower-system" name="gz::sim::systems::TrajectoryFollower">
+        <link_name>body</link_name>
+        <loop>true</loop>
+        <force>1.0</force>
+        <torque>0.9</torque>
+        <waypoints>
+          <waypoint>-14.0 -12.0</waypoint>
+          <waypoint>-8.0 -13.0</waypoint>
+          <waypoint>-7.5 -8.0</waypoint>
+          <waypoint>-13.5 -7.0</waypoint>
+        </waypoints>
+      </plugin>
+    </model>
+
+    <!-- ==================== ORIGIN MARKER ==================== -->
+    <model name="origin_marker">
+      <static>true</static>
+      <pose>0 0 -200 0 0 0</pose>
+      <link name="link">
+        <visual name="sphere">
+          <geometry><sphere><radius>0.20</radius></sphere></geometry>
+          <material>
+            <ambient>0.90 0.18 0.08 1</ambient>
+            <diffuse>1.00 0.25 0.12 1</diffuse>
+            <specular>0.30 0.08 0.04 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

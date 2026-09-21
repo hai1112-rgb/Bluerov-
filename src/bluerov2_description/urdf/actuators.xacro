@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Extension point for future actuator-only URDF additions. -->
+  <xacro:macro name="bluerov2_actuators" params="namespace">
+  </xacro:macro>
+</robot>

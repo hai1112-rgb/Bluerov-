@@ -1,0 +1,69 @@
+# disturbances.yaml - BlueROV2 200 m deep-water disturbance profile
+# =============================================================
+# Used by environment_markers.py and disturbance tests.
+# Defaults prioritize a stable deep-water environment near 200 m:
+#   - surface storms/waves are not the primary disturbance source
+#   - mild-to-moderate current is used by default
+#   - thruster fault scenarios remain available for control and recovery tests
+
+metadata:
+  environment: "deep_water_200m"
+  operating_depth_m: 200.0
+  approximate_absolute_pressure_bar: 21.0
+  water_density_kg_m3: 1025.0
+  sound_speed_m_s: 1500.0
+  notes: "Surface-wave influence is considered negligible at 200 m."
+
+disturbances:
+
+  # ---- Baseline deep current ----
+  - type: current
+    starting_time: 5
+    velocity: 0.14          # m/s - mild/moderate deep current at the 200 m worksite
+    horizontal_angle: 15    # deg
+    vertical_angle: 0
+    duration: -1
+
+  # ---- Slow current variation ----
+  - type: current
+    starting_time: 120
+    velocity: 0.24          # m/s - mild increase for station-keeping tests
+    horizontal_angle: 22
+    vertical_angle: 0
+    duration: 45
+
+  # ---- Mild force disturbance, not a surface-storm model ----
+  - type: wrench
+    starting_time: 90
+    duration: 8
+    force:
+      - 12.0
+      - 7.0
+      - 0.0
+    torque:
+      - 0.0
+      - 0.0
+      - 0.8
+
+  # ---- THRUSTER FAILURE SCENARIOS ----
+  - type: thruster_state
+    starting_time: 60
+    duration: 20
+    is_on: 0
+    thruster_id: 2
+
+  - type: thrust_efficiency
+    starting_time: 150
+    duration: 50
+    efficiency: 0.5
+    thruster_id: 4
+
+  - type: propeller_efficiency
+    starting_time: 80
+    duration: 15
+    efficiency: 0.6
+    thruster_id: 1
+
+  # ---- Wave parameters ----
+  # At 200 m, surface waves are not used as the primary disturbance.
+  # simple_dynamics_sim.py keeps wave_period for compatibility, while wave_amplitude defaults to 0.0.

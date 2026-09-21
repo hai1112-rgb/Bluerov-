@@ -1,0 +1,298 @@
+<?xml version="1.0"?>
+<sdf version="1.9" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="namespace" default="bluerov2"/>
+  <xacro:arg name="show_debug_hull" default="false"/>
+  <xacro:arg name="visualize_sonars" default="false"/>
+
+  <xacro:property name="mass" value="11.5"/>
+  <xacro:property name="ixx" value="0.245"/>
+  <xacro:property name="iyy" value="0.245"/>
+  <xacro:property name="izz" value="0.252"/>
+  <xacro:property name="fluid_density" value="1025.0"/>
+  <xacro:property name="propeller_diameter" value="0.10"/>
+  <xacro:property name="visual_mesh" value="file://$(find bluerov2_description)/meshes/bluerov2_noprop.dae"/>
+  <xacro:property name="prop_mesh_cw" value="file://$(find bluerov2_description)/meshes/bluerov2_propcw.dae"/>
+  <xacro:property name="prop_mesh_ccw" value="file://$(find bluerov2_description)/meshes/bluerov2_propccw.dae"/>
+
+  <xacro:macro name="thruster_link" params="id pose mesh_uri">
+    <link name="thruster_${id}">
+      <inertial>
+        <mass>0.05</mass>
+        <inertia>
+          <ixx>0.001</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001</iyy>
+          <iyz>0</iyz>
+          <izz>0.001</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <geometry>
+          <mesh>
+            <uri>${mesh_uri}</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="thruster_${id}_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>thruster_${id}</child>
+      <pose>${pose}</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-1e16</lower>
+          <upper>1e16</upper>
+        </limit>
+      </axis>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="thruster_plugin" params="id">
+    <plugin filename="gz-sim-thruster-system" name="gz::sim::systems::Thruster">
+      <namespace>$(arg namespace)</namespace>
+      <joint_name>thruster_${id}_joint</joint_name>
+      <thrust_coefficient>1.0</thrust_coefficient>
+      <fluid_density>${fluid_density}</fluid_density>
+      <propeller_diameter>${propeller_diameter}</propeller_diameter>
+      <topic>/$(arg namespace)/thrusters/thruster_${id}/input</topic>
+    </plugin>
+  </xacro:macro>
+
+  <model name="$(arg namespace)">
+    <pose>0 0 0 0 0 0</pose>
+    <frame name="front_camera_link" attached_to="base_link">
+      <pose>0.255 0.0 0.045 0 0 0</pose>
+    </frame>
+    <frame name="front_camera_optical_frame" attached_to="front_camera_link">
+      <!-- ROS optical convention: +Z forward, +X right, +Y down. -->
+      <pose>0 0 0 -1.5707963268 0 -1.5707963268</pose>
+    </frame>
+
+    <link name="base_link">
+      <inertial>
+        <pose>0 0 0 0 0 0</pose>
+        <mass>${mass}</mass>
+        <inertia>
+          <ixx>${ixx}</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>${iyy}</iyy>
+          <iyz>0</iyz>
+          <izz>${izz}</izz>
+        </inertia>
+      </inertial>
+      <collision name="base_collision">
+        <geometry>
+          <box>
+            <size>0.46 0.30 0.0813</size>
+          </box>
+        </geometry>
+      </collision>
+      <visual name="base_visual">
+        <geometry>
+          <mesh>
+            <uri>${visual_mesh}</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <xacro:if value="$(arg show_debug_hull)">
+        <visual name="debug_hull">
+          <geometry>
+            <box>
+              <size>0.50 0.28 0.20</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.85 0.30 0.08 1</ambient>
+            <diffuse>0.95 0.40 0.12 1</diffuse>
+            <specular>0.15 0.10 0.05 1</specular>
+          </material>
+          <transparency>0.60</transparency>
+        </visual>
+      </xacro:if>
+      <light type="spot" name="headlight_port">
+        <pose>0.22 0.08 0.02 0 0 0</pose>
+        <diffuse>1.00 1.00 1.00 1</diffuse>
+        <specular>0.35 0.35 0.35 1</specular>
+        <attenuation>
+          <range>55</range>
+          <linear>0.012</linear>
+          <constant>0.45</constant>
+          <quadratic>0.0007</quadratic>
+        </attenuation>
+        <direction>1 0 -0.10</direction>
+        <spot>
+          <inner_angle>0.35</inner_angle>
+          <outer_angle>0.95</outer_angle>
+          <falloff>0.45</falloff>
+        </spot>
+        <cast_shadows>false</cast_shadows>
+      </light>
+      <light type="spot" name="headlight_starboard">
+        <pose>0.22 -0.08 0.02 0 0 0</pose>
+        <diffuse>1.00 1.00 1.00 1</diffuse>
+        <specular>0.35 0.35 0.35 1</specular>
+        <attenuation>
+          <range>55</range>
+          <linear>0.012</linear>
+          <constant>0.45</constant>
+          <quadratic>0.0007</quadratic>
+        </attenuation>
+        <direction>1 0 -0.10</direction>
+        <spot>
+          <inner_angle>0.35</inner_angle>
+          <outer_angle>0.95</outer_angle>
+          <falloff>0.45</falloff>
+        </spot>
+        <cast_shadows>false</cast_shadows>
+      </light>
+      <sensor name="magnetic_compass" type="magnetometer">
+        <pose>0.0 0.0 0.06 0 0 0</pose>
+        <topic>/$(arg namespace)/magnetometer</topic>
+        <always_on>true</always_on>
+        <update_rate>30</update_rate>
+        <visualize>false</visualize>
+      </sensor>
+      <sensor name="forward_sonar" type="ray">
+        <pose>0.24 0.0 0.0 0 0 0</pose>
+        <topic>/$(arg namespace)/sonar/forward</topic>
+        <always_on>true</always_on>
+        <update_rate>12</update_rate>
+        <visualize>$(arg visualize_sonars)</visualize>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>61</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.7853981634</min_angle>
+              <max_angle>0.7853981634</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0.0</min_angle>
+              <max_angle>0.0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.25</min>
+            <max>25.0</max>
+            <resolution>0.05</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.02</stddev>
+          </noise>
+        </ray>
+      </sensor>
+      <sensor name="downward_sonar" type="ray">
+        <pose>0.0 0.0 -0.08 0 -1.5707963268 0</pose>
+        <topic>/$(arg namespace)/sonar/downward</topic>
+        <always_on>true</always_on>
+        <update_rate>15</update_rate>
+        <visualize>$(arg visualize_sonars)</visualize>
+        <ray>
+          <scan>
+            <horizontal>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0.0</min_angle>
+              <max_angle>0.0</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>1</samples>
+              <resolution>1</resolution>
+              <min_angle>0.0</min_angle>
+              <max_angle>0.0</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.10</min>
+            <max>220.0</max>
+            <resolution>0.02</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.01</stddev>
+          </noise>
+        </ray>
+      </sensor>
+      <sensor name="front_fpv_camera" type="camera">
+        <!-- Pose is attached to the visual camera frame; optical_frame_id is set below. -->
+        <pose relative_to="front_camera_link">0 0 0 0 0 0</pose>
+        <topic>/$(arg namespace)/camera/front/image</topic>
+        <always_on>true</always_on>
+        <update_rate>30</update_rate>
+        <visualize>true</visualize>
+        <camera name="front_fpv_camera">
+          <camera_info_topic>/$(arg namespace)/camera/front/camera_info</camera_info_topic>
+          <optical_frame_id>front_camera_optical_frame</optical_frame_id>
+          <horizontal_fov>1.2217304764</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>60.0</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.006</stddev>
+          </noise>
+        </camera>
+      </sensor>
+    </link>
+
+    <xacro:thruster_link id="0" pose="0.1355 -0.1 -0.0725 0 0 0.7853981634" mesh_uri="${prop_mesh_cw}"/>
+    <xacro:thruster_link id="1" pose="0.1355 0.1 -0.0725 0 0 -0.7853981634" mesh_uri="${prop_mesh_ccw}"/>
+    <xacro:thruster_link id="2" pose="-0.1475 -0.1 -0.0725 0 0 2.3561944902" mesh_uri="${prop_mesh_cw}"/>
+    <xacro:thruster_link id="3" pose="-0.1475 0.1 -0.0725 0 0 -2.3561944902" mesh_uri="${prop_mesh_ccw}"/>
+    <xacro:thruster_link id="4" pose="0.0025 -0.1105 -0.005 0 -1.5707963268 0" mesh_uri="${prop_mesh_cw}"/>
+    <xacro:thruster_link id="5" pose="0.0025 0.1105 -0.005 0 -1.5707963268 0" mesh_uri="${prop_mesh_ccw}"/>
+
+    <plugin filename="gz-sim-hydrodynamics-system" name="gz::sim::systems::Hydrodynamics">
+      <link_name>base_link</link_name>
+      <xDotU>-6.357</xDotU>
+      <yDotV>-7.121</yDotV>
+      <zDotW>-18.68</zDotW>
+      <kDotP>-0.020</kDotP>
+      <mDotQ>-0.245</mDotQ>
+      <nDotR>-0.252</nDotR>
+      <xU>-13.7</xU>
+      <yV>-13.7</yV>
+      <zW>-33.0</zW>
+      <kP>-3.8</kP>
+      <mQ>-4.0</mQ>
+      <nR>-6.5</nR>
+      <xUabsU>-8.0</xUabsU>
+      <yVabsV>-8.0</yVabsV>
+      <zWabsW>-10.0</zWabsW>
+      <kPabsP>-0.8</kPabsP>
+      <mQabsQ>-0.8</mQabsQ>
+      <nRabsR>-1.0</nRabsR>
+    </plugin>
+
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <odom_topic>/$(arg namespace)/pose_gt</odom_topic>
+      <tf_topic>/tf</tf_topic>
+    </plugin>
+
+    <xacro:thruster_plugin id="0"/>
+    <xacro:thruster_plugin id="1"/>
+    <xacro:thruster_plugin id="2"/>
+    <xacro:thruster_plugin id="3"/>
+    <xacro:thruster_plugin id="4"/>
+    <xacro:thruster_plugin id="5"/>
+  </model>
+</sdf>

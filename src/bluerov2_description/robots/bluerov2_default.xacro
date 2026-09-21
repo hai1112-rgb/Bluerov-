@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<robot name="bluerov2" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="namespace" default="bluerov2"/>
+  <xacro:include filename="$(find bluerov2_description)/urdf/base.xacro"/>
+  <xacro:include filename="$(find bluerov2_description)/urdf/sensors.xacro"/>
+  <xacro:include filename="$(find bluerov2_description)/urdf/actuators.xacro"/>
+  <xacro:include filename="$(find bluerov2_description)/urdf/gazebo.xacro"/>
+  <xacro:bluerov2_base namespace="$(arg namespace)"/>
+</robot>

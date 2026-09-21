@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>bluerov2_gazebo</name>
+  <version>0.1.0</version>
+  <description>ROS 2 launch package for BlueROV2 autonomous simulation demos.</description>
+
+  <maintainer email="frederico@my.ingeniarius.pt">Ingeniarius</maintainer>
+  <author email="frederovico.vaz@isr.uc.pt">ISR-UC</author>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>bluerov2_control</exec_depend>
+  <exec_depend>bluerov2_description</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rosgraph_msgs</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf2_msgs</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

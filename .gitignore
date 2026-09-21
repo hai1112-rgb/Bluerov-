@@ -1,0 +1,29 @@
+# ROS 2 / colcon generated directories
+build/
+install/
+log/
+
+# Python caches
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Editor / OS temporary files
+.vscode/
+.idea/
+**/*.swp
+**/*.swo
+**/*~
+.DS_Store
+Thumbs.db
+
+# MATLAB / Simulink generated artifacts
+src/bluerov2_control/MatlabSrc/Functions/slprj/
+src/bluerov2_control/MatlabSrc/Functions/*.slxc
+
+# ROS bag / runtime recordings
+*.bag
+*.db3
+*.mcap

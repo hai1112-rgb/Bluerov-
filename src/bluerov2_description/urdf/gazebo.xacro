@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Extension point for Gazebo / simulation-specific URDF tags. -->
+  <xacro:macro name="bluerov2_gazebo" params="namespace">
+  </xacro:macro>
+</robot>

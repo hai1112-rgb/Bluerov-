@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    input_odom_topic: sim/pose_gt
+    imu_topic: imu/data
+    dvl_topic: dvl/twist
+    depth_topic: depth
+    imu_yaw_bias: 0.01
+    imu_yaw_rate_bias: 0.005
+    dvl_scale_xy: 0.985
+    dvl_scale_z: 0.99
+    depth_bias: 0.015
+    max_accel_dt: 0.5

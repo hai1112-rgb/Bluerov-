@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find bluerov2_description)/urdf/snippets.xacro"/>
+
+  <xacro:property name="mass" value="10.0"/>
+  <xacro:property name="x_size" value="0.448"/>
+  <xacro:property name="y_size" value="0.2384"/>
+  <xacro:property name="z_size" value="0.28066"/>
+  <xacro:property name="visual_mesh_file" value="file://$(find bluerov2_description)/meshes/bluerov2_noprop.dae"/>
+  <xacro:property name="collision_mesh_file" value="file://$(find bluerov2_description)/meshes/bluerov2_noprop.stl"/>
+
+  <xacro:macro name="bluerov2_base" params="namespace">
+    <link name="base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${visual_mesh_file}" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="${collision_mesh_file}" scale="1 1 1"/>
+        </geometry>
+      </collision>
+    </link>
+
+
+    <!-- FPV camera frames for RViz. The Gazebo sensor is mounted at the same nose pose in models/bluerov2_gz.sdf.xacro. -->
+    <link name="front_camera_link"/>
+    <joint name="front_camera_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="front_camera_link"/>
+      <origin xyz="0.255 0.0 0.045" rpy="0 0 0"/>
+    </joint>
+
+    <link name="front_camera_optical_frame"/>
+    <joint name="front_camera_optical_joint" type="fixed">
+      <parent link="front_camera_link"/>
+      <child link="front_camera_optical_frame"/>
+      <!-- ROS optical convention: +Z forward, +X right, +Y down. -->
+      <origin xyz="0 0 0" rpy="-1.5707963268 0 -1.5707963268"/>
+    </joint>
+
+    <xacro:thruster_macro thruster_id="0" xyz="0.1355 -0.1 -0.0725" rpy="0 0 0.7853981634"/>
+    <xacro:thruster_macro thruster_id="1" xyz="0.1355 0.1 -0.0725" rpy="0 0 -0.7853981634"/>
+    <xacro:thruster_macro thruster_id="2" xyz="-0.1475 -0.1 -0.0725" rpy="0 0 2.3561944902"/>
+    <xacro:thruster_macro thruster_id="3" xyz="-0.1475 0.1 -0.0725" rpy="0 0 -2.3561944902"/>
+    <xacro:thruster_macro thruster_id="4" xyz="0.0025 -0.1105 -0.005" rpy="0 -1.5707963268 0"/>
+    <xacro:thruster_macro thruster_id="5" xyz="0.0025 0.1105 -0.005" rpy="0 -1.5707963268 0"/>
+  </xacro:macro>
+</robot>
