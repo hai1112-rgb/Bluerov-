@@ -1,0 +1,61 @@
+/**:
+  ros__parameters:
+    update_rate: 20.0
+    odom_topic: pose_gt
+    wrench_topic: thruster_manager/input
+    goal_tolerance_xy: 0.25
+    goal_tolerance_z: 0.2
+    goal_tolerance_yaw: 0.2
+    loop_waypoints: false
+    hold_last_waypoint: true
+    start_at_current_position: true
+    interpolate_path: true
+    path_resolution: 0.3
+    publish_path_topic: planned_path
+    enable_click_to_go: true
+    clicked_point_topic: /clicked_point
+    goal_point_topic: /goal_point
+    goal_pose_topic: /goal_pose
+    click_use_current_depth: false
+    click_target_depth: -205.0
+    click_face_goal: true
+    enable_depth_setpoint: true
+    depth_setpoint_topic: /depth_setpoint
+    surface_depth_margin: 0.1
+    enable_forward_sonar_avoidance: true
+    forward_sonar_topic: sonar/forward
+    forward_sonar_sector_half_angle: 0.55
+    forward_sonar_stop_distance: 1.4
+    forward_sonar_clear_distance: 3.0
+    forward_sonar_timeout: 1.0
+    forward_sonar_reverse_force: 12.0
+    forward_sonar_lateral_force: 26.0
+    forward_sonar_yaw_gain: 14.0
+    kp_xy: 70.0
+    kd_xy: 35.0
+    kp_z: 110.0
+    ki_z: 2.0
+    kd_z: 55.0
+    kp_yaw: 35.0
+    ki_yaw: 0.8
+    kd_yaw: 14.0
+    kp_roll: 12.0
+    ki_roll: 0.4
+    kd_roll: 4.0
+    kp_pitch: 12.0
+    ki_pitch: 0.2
+    kd_pitch: 4.0
+    depth_feedforward_force: -1.3
+    integral_limit_z: 4.0
+    integral_limit_yaw: 0.7
+    integral_limit_roll: 0.35
+    integral_limit_pitch: 0.25
+    max_force_xy: 80.0
+    max_force_z: 120.0
+    max_torque_xy: 20.0
+    max_torque_z: 25.0
+    waypoints:
+    - -12.0, 0.0, -205.0, 0.0
+    - 0.0, 0.0, -205.0, 0.0
+    - 12.0, 0.0, -205.0, 0.0
+    - 26.0, 0.0, -205.0, 0.0

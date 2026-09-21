@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BlueROV2 200 m Terminal Guide</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071014;
+      --panel: #101d24;
+      --border: #25414c;
+      --text: #eef8f7;
+      --muted: #9fc0c5;
+      --accent: #57d8c6;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 40px 20px 64px;
+    }
+    h1, h2, h3 {
+      line-height: 1.15;
+      margin: 0 0 14px;
+    }
+    h1 {
+      font-size: 32px;
+    }
+    h2 {
+      margin-top: 34px;
+      font-size: 24px;
+    }
+    h3 {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    p {
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    a {
+      color: var(--accent);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    pre {
+      margin: 12px 0 0;
+      padding: 14px;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #050b0f;
+      color: #e6fffa;
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #102832;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>BlueROV2 200 m Terminal Guide</h1>
+    <p>This page collects the main terminal workflows for the ROS 2 Jazzy BlueROV2 simulation workspace: build, Gazebo, RViz, autonomous navigation, teleoperation, disturbance control, and quick topic checks.</p>
+
+    <h2>Environment Setup</h2>
+    <pre><code>cd /path/to/bluerov2_200m_optimized
+source /opt/ros/jazzy/setup.bash
+colcon build --packages-select bluerov2_description bluerov2_control bluerov2_gazebo
+source install/setup.bash</code></pre>
+
+    <h2>Common Launch Commands</h2>
+    <p>The repository uses standard ROS 2 launch and run commands directly; no additional helper script is required.</p>
+
+    <h2>Direct ROS 2 Launch Commands</h2>
+    <pre><code>ros2 launch bluerov2_gazebo start_enhanced_world.launch.py open_rviz:=false gz_gui:=false
+ros2 launch bluerov2_gazebo start_enhanced_world.launch.py open_rviz:=true
+ros2 launch bluerov2_gazebo start_enhanced_world.launch.py gz_gui:=true open_rviz:=true
+ros2 launch bluerov2_gazebo start_autonomous_demo.launch.py open_rviz:=true
+ros2 launch bluerov2_gazebo start_rviz_navigation_demo.launch.py
+ros2 launch bluerov2_gazebo start_rviz_navigation_demo.launch.py enable_autopilot:=false</code></pre>
+
+    <h2>Run Components Individually</h2>
+    <pre><code>ros2 launch bluerov2_control start_thruster_manager.launch.py
+ros2 launch bluerov2_control start_sensor_suite.launch.py
+ros2 launch bluerov2_control start_localizer.launch.py
+ros2 launch bluerov2_control start_autonomous_controller.launch.py
+ros2 run bluerov2_control keyboard_wrench_teleop.py --ros-args -r __ns:=/bluerov2
+ros2 run bluerov2_control keyboard_disturbance.py</code></pre>
+
+    <h2>Quick Topic Checks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Command</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ros2 topic echo /bluerov2/pose_gt --once</code></td>
+          <td>Read one ground-truth pose sample from <code>/bluerov2/pose_gt</code>.</td>
+        </tr>
+        <tr>
+          <td><code>ros2 topic echo /bluerov2/localized_pose --once</code></td>
+          <td>Read one fused localizer pose sample.</td>
+        </tr>
+        <tr>
+          <td><code>ros2 run tf2_ros tf2_echo world base_link</code></td>
+          <td>Inspect the <code>world -> base_link</code> transform.</td>
+        </tr>
+        <tr>
+          <td><code>ros2 topic echo /bluerov2/sonar/forward --once</code></td>
+          <td>Read one forward sonar sample.</td>
+        </tr>
+        <tr>
+          <td><code>ros2 topic echo /bluerov2/sonar/downward --once</code></td>
+          <td>Read one downward sonar sample.</td>
+        </tr>
+        <tr>
+          <td><code>ros2 topic echo /bluerov2/sensors/magnetometer --once</code></td>
+          <td>Read one magnetometer sample.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Configuration Files</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>src/bluerov2_control/config/TAM.yaml</code></td>
+          <td>Six-degree-of-freedom thrust allocation matrix.</td>
+        </tr>
+        <tr>
+          <td><code>src/bluerov2_control/config/thruster_manager.yaml</code></td>
+          <td>Thruster allocation, damping, weights, and diagnostics.</td>
+        </tr>
+        <tr>
+          <td><code>src/bluerov2_control/config/autonomous_controller.yaml</code></td>
+          <td>Waypoint autopilot gains, limits, click-to-go, and sonar avoidance.</td>
+        </tr>
+        <tr>
+          <td><code>src/bluerov2_control/config/localization.yaml</code></td>
+          <td>Localizer frames, topics, update rate, and initial pose.</td>
+        </tr>
+        <tr>
+          <td><code>src/bluerov2_control/config/simulator.yaml</code></td>
+          <td>Vehicle mass, added mass, drag, depth, current, and wave parameters.</td>
+        </tr>
+        <tr>
+          <td><code>src/bluerov2_gazebo/config/disturbances.yaml</code></td>
+          <td>Deep-water current and thruster fault scenarios.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Recommended Smoke-Test Sequence</h2>
+    <pre><code>source /opt/ros/jazzy/setup.bash
+colcon build --packages-select bluerov2_description bluerov2_control bluerov2_gazebo
+source install/setup.bash
+ros2 launch bluerov2_gazebo start_enhanced_world.launch.py open_rviz:=false gz_gui:=false
+ros2 topic list
+ros2 topic echo /bluerov2/pose_gt --once
+ros2 topic echo /bluerov2/localized_pose --once
+ros2 topic echo /bluerov2/sonar/forward --once
+ros2 topic echo /bluerov2/sonar/downward --once</code></pre>
+  </main>
+</body>
+</html>
